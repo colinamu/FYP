@@ -1,0 +1,70 @@
+#include <LiquidCrystal.h>
+// initialize the library with the numbers of the interface pins
+LiquidCrystal lcd(11, 12, 2, 3, 4, 5);
+
+uint8_t dataBuf[14];
+int  sampleNumber;
+uint16_t  adcValue;
+float adcVoltValue;
+
+const int hallSensor = A5;
+int sensorValue = 0;
+float voltage = 0.0;
+int sensorState = 0;
+float rotationsCounter = 0.0;
+int lastSensorState = 0;
+unsigned long currentTime = 0; 
+unsigned long previousTime = 0;
+float interval = 5000.00;
+float intervalSec = interval / 1000.00;
+float rps = 0.0;
+  
+
+void setup(){
+    lcd.begin(16, 2);
+    pinMode(hallSensor, INPUT);
+    Serial.begin(9600);
+}
+
+void loop(){
+    if(Serial.available()){
+        if(Serial.read() == 0x7E){
+            Serial.readBytes((char *)dataBuf, 13);
+            sampleNumber = dataBuf[7];
+            for(int i=0; i < sampleNumber; i++){
+                adcValue = (((uint16_t) dataBuf[i*2 + 10] << 8) | dataBuf[i*2 + 11]);                    
+                adcVoltValue = ((float)adcValue) * (3.3/1023.0);
+                lcd.setCursor(0,1);
+                lcd.print("Crank volt: ");
+                lcd.print(adcVoltValue);
+            }    
+        }
+    }
+ 
+     // read the input on analog pin 5:
+    sensorValue = analogRead(hallSensor); 
+    currentTime = millis();
+    // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 5V):
+    voltage = sensorValue * (5.0 / 1023.0);
+    if (voltage < 1) {
+        sensorState = HIGH;
+    }
+    else{
+        sensorState = LOW;  
+    }
+//  Serial.println(voltage);
+    if (sensorState != lastSensorState) {
+        if (sensorState == HIGH) {
+            rotationsCounter++;
+        }
+    }
+    lastSensorState = sensorState;
+    if((unsigned long)(currentTime - previousTime) >= interval) {
+        rps = rotationsCounter / intervalSec;
+        rotationsCounter = 0;
+        previousTime = currentTime;
+        lcd.setCursor(0,0);
+        lcd.print("RPS: ");
+        lcd.print(rps);
+    }      
+}
