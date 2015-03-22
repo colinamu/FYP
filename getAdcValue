@@ -1,0 +1,26 @@
+#define SERIAL_BAUD        9600
+
+void setup(){
+    Serial.begin(SERIAL_BAUD);
+}
+
+void loop(){
+  getAdcValue();        
+}
+      
+void getAdcValue(){
+  uint8_t dataBuf[14];
+  int  sampleNumber;
+  uint16_t  adcValue;
+    if(Serial.available()){
+        if(Serial.read() == 0x7E){
+            Serial.readBytes((char *)dataBuf, 13);
+            sampleNumber = dataBuf[7];
+            for(int i=0;i < sampleNumber;i++){
+                adcValue = (((uint16_t) dataBuf[i*2 + 10] << 8) | dataBuf[i*2 + 11]);
+            }
+            Serial.print("ADC Value : \t");
+            Serial.println(adcValue);            
+        }
+    }
+}  
