@@ -1,0 +1,62 @@
+// the setup routine runs once when you press reset:
+const int hallSensor = A5;
+
+int sensorValue = 0;
+float voltage = 0.0;
+int sensorState = 0;
+float rotationsCounter = 0.0;
+int lastSensorState = 0;
+unsigned long currentTime = 0; 
+unsigned long previousTime = 0;
+float interval = 5000.00;
+float intervalSec = interval / 1000.00;
+float rps = 0.0;
+
+
+void setup() {
+    // initialize serial communication at 9600 bits per second:
+    pinMode(hallSensor, INPUT);
+
+    Serial.begin(9600);
+}
+
+// the loop routine runs over and over again forever:
+void loop() {
+  getRps();
+}  
+ 
+void getRps(){ 
+    // read the input on analog pin 5:
+    sensorValue = analogRead(hallSensor);
+  
+    currentTime = millis();
+  
+    // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 5V):
+    voltage = sensorValue * (5.0 / 1023.0);
+
+    if (voltage < 1) {
+        sensorState = HIGH;
+    }
+    else
+        sensorState = LOW;  
+
+    //  Serial.println(voltage);
+
+    if (sensorState != lastSensorState) {
+        if (sensorState == HIGH) {
+            rotationsCounter++;
+            Serial.print("number of magnet passes:  ");
+            Serial.println(rotationsCounter);
+        }
+    }
+  
+    lastSensorState = sensorState;
+  
+    if((unsigned long)(currentTime - previousTime) >= interval) {
+        rps = rotationsCounter / intervalSec;
+        rotationsCounter = 0;
+        Serial.print("rps:   ");
+        Serial.println(rps);
+        previousTime = currentTime;
+    }       
+}
